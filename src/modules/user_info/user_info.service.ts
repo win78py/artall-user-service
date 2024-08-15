@@ -5,13 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, FindOneOptions, Repository } from 'typeorm';
+import { EntityManager, FindOneOptions, In, Repository } from 'typeorm';
 import { UserInfo } from '../../entities/userInfo.entity';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Multer } from 'multer';
 import { CreateUserInfoDto } from './dto/create-user_info.dto';
 import { validate as uuidValidate } from 'uuid';
-import { Follow } from 'src/entities/follow.entity';
+import { Follow } from '../../entities/follow.entity';
 import {
   CheckUserInfoExistsRequest,
   CheckUserInfoExistsResponse,
@@ -24,7 +24,12 @@ import {
 } from '../../common/interface/userInfo.interface';
 import { GetUserInfoParams } from './dto/getList-user_info.dto';
 import { RpcException } from '@nestjs/microservices';
-import { UserProfile } from 'src/entities/userProfile.entity';
+import { UserProfile } from '../../entities/userProfile.entity';
+import { BlockList } from '../../entities/blockList.entity';
+import { Post } from '../../entities/post.entity';
+import { Like } from '../../entities/like.entity';
+import { LikeComment } from '../../entities/likeComment.entity';
+import { Comment } from '../../entities/comment.entity';
 
 @Injectable()
 export class UserInfoService {
@@ -166,10 +171,9 @@ export class UserInfoService {
       ) {
         await this.deleteOldAvatar(userInfo);
 
-        // Upload ảnh và cập nhật URL
         userInfo.profilePicture = await this.uploadAndReturnUrl({
           buffer: profilePicture,
-          mimetype: 'image/jpeg', // Giả sử định dạng là image/jpeg, bạn có thể thay đổi nếu cần
+          mimetype: 'image/jpeg',
         });
       }
 
@@ -202,32 +206,58 @@ export class UserInfoService {
       throw new BadRequestException('Invalid UUID');
     }
 
-    const userInfo = await this.usersInfoRepository
-      .createQueryBuilder('userInfo')
-      .leftJoinAndSelect('userInfo.follower', 'follower')
-      .where('userInfo.id = :id', { id })
-      .getOne();
+    await this.entityManager.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.softDelete(UserProfile, {
+        userInfoId: id,
+      });
+      await transactionalEntityManager.softDelete(Follow, { followerId: id });
+      await transactionalEntityManager.softDelete(Follow, { followingId: id });
+      await transactionalEntityManager.softDelete(BlockList, {
+        blockerId: id,
+      });
+      await transactionalEntityManager.softDelete(BlockList, {
+        blockedId: id,
+      });
+      await transactionalEntityManager.softDelete(Like, { userId: id });
 
-    if (!userInfo) {
-      throw new NotFoundException(`UserInfo with ID ${id} not found`);
-    }
-
-    if (userInfo.follower && userInfo.follower.length > 0) {
-      for (const follower of userInfo.follower) {
-        await this.entityManager.softDelete(Follow, {
-          id: follower.id,
+      const comments = await transactionalEntityManager.find(Comment, {
+        where: { userId: id },
+      });
+      const commentIds = comments.map((comment) => comment.id);
+      if (commentIds.length > 0) {
+        await transactionalEntityManager.softDelete(LikeComment, {
+          comment: { id: In(commentIds) },
+        });
+        await transactionalEntityManager.softDelete(Comment, {
+          id: In(commentIds),
         });
       }
-    }
 
-    const userProfile = await this.userProfileRepository
-      .createQueryBuilder('userProfile')
-      .where('userProfile.userInfoId = :id', { id })
-      .getOne();
+      const posts = await transactionalEntityManager.find(Post, {
+        where: { userId: id },
+      });
+      const postIds = posts.map((post) => post.id);
+      if (postIds.length > 0) {
+        await transactionalEntityManager.softDelete(Like, {
+          postId: In(postIds),
+        });
+        const postComments = await transactionalEntityManager.find(Comment, {
+          where: { postId: In(postIds) },
+        });
+        const postCommentIds = postComments.map((comment) => comment.id);
+        if (postCommentIds.length > 0) {
+          await transactionalEntityManager.softDelete(LikeComment, {
+            comment: { id: In(postCommentIds) },
+          });
+          await transactionalEntityManager.softDelete(Comment, {
+            id: In(postCommentIds),
+          });
+        }
+        await transactionalEntityManager.softDelete(Post, { id: In(postIds) });
+      }
 
-    if (userProfile) {
-      await this.userProfileRepository.softDelete(userProfile.id);
-    }
+      await transactionalEntityManager.softDelete(UserInfo, id);
+    });
 
     await this.usersInfoRepository.softDelete(id);
 
