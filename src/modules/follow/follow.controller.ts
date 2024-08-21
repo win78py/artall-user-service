@@ -1,6 +1,5 @@
 import { Controller } from '@nestjs/common';
 import { FollowService } from './follow.service';
-import { GetFollowParams } from './dto/getList-follow.dto';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
   CheckFollowExistsRequest,
@@ -11,6 +10,7 @@ import {
   GetFollowIdRequest,
   FollowResponse,
   ManyFollowResponse,
+  GetAllFollowRequest,
 } from 'src/common/interface/follow.interface';
 
 @Controller('follow')
@@ -19,7 +19,7 @@ export class FollowController {
 
   //GET ALL FOLLOW
   @GrpcMethod('UserService', 'GetAllFollow')
-  async findAll(data: GetFollowParams): Promise<ManyFollowResponse> {
+  async findAll(data: GetAllFollowRequest): Promise<ManyFollowResponse> {
     return this.followService.getFollow(data);
   }
 

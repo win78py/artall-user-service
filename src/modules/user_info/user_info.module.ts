@@ -6,10 +6,17 @@ import { UserInfo } from '../../entities/userInfo.entity';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UserProfileService } from '../user_profile/user_profile.service';
 import { UserProfile } from 'src/entities/userProfile.entity';
+import { Follow } from 'src/entities/follow.entity';
+import { FollowService } from '../follow/follow.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserInfo, UserProfile])],
+  imports: [TypeOrmModule.forFeature([UserInfo, UserProfile, Follow])],
   controllers: [UserInfoController],
-  providers: [UserInfoService, CloudinaryService, UserProfileService],
+  providers: [
+    UserInfoService,
+    CloudinaryService,
+    UserProfileService,
+    FollowService,
+  ],
 })
 export class UserInfoModule {}

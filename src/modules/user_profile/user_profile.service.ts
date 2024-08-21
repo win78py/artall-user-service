@@ -40,9 +40,15 @@ export class UserProfileService {
       .take(params.take)
       .orderBy('userProfile.createdAt', 'DESC');
 
-    if (params.search) {
+    if (params.fullName) {
       usersProfile.andWhere('userProfile.fullName ILIKE :fullName', {
-        fullName: `%${params.search}%`,
+        fullName: `%${params.fullName}%`,
+      });
+    }
+
+    if (params.userInfoId) {
+      usersProfile.andWhere('userProfile.userInfoId = :userInfoId', {
+        userInfoId: params.userInfoId,
       });
     }
 
@@ -93,8 +99,6 @@ export class UserProfileService {
         : null,
     }));
 
-    console.log('data', data);
-
     const meta: PageMeta = {
       page: params.page,
       take: params.take,
@@ -140,25 +144,6 @@ export class UserProfileService {
       deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
       deletedBy: user.deletedBy || null,
       userInfoId: user.userInfoId,
-      userInfo: user.userInfo
-        ? {
-            id: user.userInfo.id,
-            username: user.userInfo.username,
-            profilePicture: user.userInfo.profilePicture,
-            createdAt: user.userInfo.createdAt
-              ? user.userInfo.createdAt.toISOString()
-              : null,
-            createdBy: user.userInfo.createdBy || null,
-            updatedAt: user.userInfo.updatedAt
-              ? user.userInfo.updatedAt.toISOString()
-              : null,
-            updatedBy: user.userInfo.updatedBy || null,
-            deletedAt: user.userInfo.deletedAt
-              ? user.userInfo.deletedAt.toISOString()
-              : null,
-            deletedBy: user.userInfo.deletedBy || null,
-          }
-        : null,
     };
   }
 

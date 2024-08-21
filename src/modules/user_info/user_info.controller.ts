@@ -10,7 +10,8 @@ import {
   GetUserInfoIdRequest,
   UpdateUserInfoRequest,
   UserInfoResponse,
-  UsersInfoResponse,
+  UserResponse,
+  UsersResponse,
 } from '../../common/interface/userInfo.interface';
 import { GetUserInfoParams } from './dto/getList-user_info.dto';
 
@@ -18,15 +19,21 @@ import { GetUserInfoParams } from './dto/getList-user_info.dto';
 export class UserInfoController {
   constructor(private readonly userInfoService: UserInfoService) {}
 
+  //GET ALL USERS
+  @GrpcMethod('UserService', 'GetAllUsers')
+  async findAllUsers(data: GetUserInfoParams): Promise<UsersResponse> {
+    return this.userInfoService.getUsers(data);
+  }
+
   //GET ALL USERS INFO
   @GrpcMethod('UserService', 'GetAllUsersInfo')
-  async findAll(data: GetUserInfoParams): Promise<UsersInfoResponse> {
+  async findAll(data: GetUserInfoParams): Promise<UsersResponse> {
     return this.userInfoService.getUsersInfo(data);
   }
 
   //GET USER INFO BY ID
   @GrpcMethod('UserService', 'GetUserInfoId')
-  async findOneById(data: GetUserInfoIdRequest): Promise<UserInfoResponse> {
+  async findOneById(data: GetUserInfoIdRequest): Promise<UserResponse> {
     return this.userInfoService.getUserInfoById(data);
   }
 

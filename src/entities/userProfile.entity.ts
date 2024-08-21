@@ -72,11 +72,11 @@ export class UserProfile extends AbstractEntity {
   @Column('boolean')
   isActive: boolean;
 
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true })
   userInfoId: string;
 
-  @OneToOne(() => UserInfo, { nullable: true })
-  @JoinColumn({ name: 'userInfoId', referencedColumnName: 'id' })
+  @OneToOne(() => UserInfo, (userInfo) => userInfo.userProfile)
+  @JoinColumn({ name: 'userInfoId' })
   userInfo: UserInfo;
 
   constructor(userProfile: Partial<UserProfile>) {
