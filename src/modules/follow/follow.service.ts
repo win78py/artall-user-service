@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Follow } from 'src/entities/follow.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GetFollowParams } from './dto/getList-follow.dto';
 import { Order } from 'src/common/enum/enum';
 import { validate as uuidValidate } from 'uuid';
 import { FollowNotFoundException } from 'src/common/exceptions/not-found';
@@ -10,7 +9,9 @@ import {
   CheckFollowExistsRequest,
   CheckFollowExistsResponse,
   CreateFollowRequest,
+  FollowerFollowingResponse,
   FollowResponse,
+  GetAllFollowRequest,
   GetFollowIdRequest,
   ManyFollowResponse,
   PageMeta,
@@ -24,29 +25,45 @@ export class FollowService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  async getFollow(params: GetFollowParams): Promise<ManyFollowResponse> {
+  async getFollow(params: GetAllFollowRequest): Promise<ManyFollowResponse> {
     const follow = this.followRepository
       .createQueryBuilder('follow')
-      .select(['follow'])
+      .leftJoinAndSelect('follow.follower', 'follower')
+      .leftJoinAndSelect('follow.following', 'following')
       .skip(params.skip)
       .take(params.take)
       .orderBy('follow.createdAt', Order.DESC);
-    if (params.search) {
-      follow.andWhere('follow.followerId ILIKE :followerId', {
-        follow: `%${params.search}%`,
+    if (params.follower) {
+      follow.andWhere('follow.followerId = :followerId', {
+        followerId: params.follower,
+      });
+    }
+    if (params.following) {
+      follow.andWhere('follow.followingId = :followingId', {
+        followingId: params.following,
       });
     }
     const [result, total] = await follow.getManyAndCount();
-    const data: FollowResponse[] = result.map((follow) => ({
+    const data: FollowerFollowingResponse[] = result.map((follow) => ({
       id: follow.id,
-      followerId: follow.followerId,
-      followingId: follow.followingId,
+      followerId: follow.follower.id,
+      followingId: follow.following.id,
       createdAt: follow.createdAt ? follow.createdAt.toISOString() : null,
       createdBy: follow.createdBy || null,
       updatedAt: follow.updatedAt ? follow.updatedAt.toISOString() : null,
       updatedBy: follow.updatedBy || null,
       deletedAt: follow.deletedAt ? follow.deletedAt.toISOString() : null,
       deletedBy: follow.deletedBy || null,
+      follower: {
+        id: follow.follower.id,
+        username: follow.follower.username,
+        profilePicture: follow.follower.profilePicture,
+      },
+      following: {
+        id: follow.following.id,
+        username: follow.following.username,
+        profilePicture: follow.following.profilePicture,
+      },
     }));
 
     const meta: PageMeta = {

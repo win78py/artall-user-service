@@ -6,7 +6,16 @@ export class PageOptionsDto {
   @IsString()
   search?: string = '';
 
+  @IsString()
+  fullName?: string = '';
+
+  @IsString()
+  userInfoId?: string = '';
+
   emptyValue?: string = '';
+
+  @IsString()
+  follower?: string = '';
 
   @IsEnum(Order)
   @IsOptional()

@@ -20,7 +20,9 @@ import {
   PageMeta,
   UpdateUserInfoRequest,
   UserInfoResponse,
+  UserResponse,
   UsersInfoResponse,
+  UsersResponse,
 } from '../../common/interface/userInfo.interface';
 import { GetUserInfoParams } from './dto/getList-user_info.dto';
 import { RpcException } from '@nestjs/microservices';
@@ -42,31 +44,82 @@ export class UserInfoService {
     private readonly userProfileRepository: Repository<UserProfile>,
   ) {}
 
-  async getUsersInfo(params: GetUserInfoParams): Promise<UsersInfoResponse> {
+  async getUsers(params: GetUserInfoParams): Promise<UsersResponse> {
     const usersInfo = this.usersInfoRepository
       .createQueryBuilder('userInfo')
-      .withDeleted()
+      .leftJoinAndSelect('userInfo.userProfile', 'userProfile')
       .skip(params.skip)
       .take(params.take)
       .orderBy('userInfo.createdAt', params.order || 'DESC');
 
-    // if (params.search) {
-    //   queryBuilder.andWhere('CAST(userInfo.deletedAt AS TEXT) ILIKE :search', {
-    //     search: `%${params.search}%`,
-    //   });
-    // }
+    const [result, total] = await usersInfo.getManyAndCount();
 
-    if (params.search) {
-      if (params.search === 'null') {
-        // Tìm kiếm các bản ghi có deletedAt là NULL
-        usersInfo.andWhere('userInfo.deletedAt IS NULL');
-      } else {
-        // Tìm kiếm dựa trên giá trị search thông thường cho deletedAt
-        usersInfo.andWhere('CAST(userInfo.deletedAt AS TEXT) ILIKE :search', {
-          search: `%${params.search}%`,
-        });
-      }
-    }
+    const data: UserInfoResponse[] = result.map((user) => ({
+      id: user.id,
+      username: user.username,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt ? user.createdAt.toISOString() : null,
+      createdBy: user.createdBy || null,
+      updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+      updatedBy: user.updatedBy || null,
+      deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+      deletedBy: user.deletedBy || null,
+      userProfile: user.userProfile
+        ? {
+            id: user.userProfile.id,
+            password: user.userProfile.password,
+            fullName: user.userProfile.fullName,
+            email: user.userProfile.email,
+            phoneNumber: user.userProfile.phoneNumber,
+            bio: user.userProfile.bio,
+            role: user.userProfile.role,
+            birthDate: user.userProfile.birthDate
+              ? user.userProfile.birthDate.toISOString().split('T')[0]
+              : null,
+            location: user.userProfile.location,
+            website: user.userProfile.website,
+            socialLinks: user.userProfile.socialLinks,
+            lastLogin: user.userProfile.lastLogin
+              ? user.userProfile.lastLogin.toISOString()
+              : null,
+            profileVisibility: user.userProfile.profileVisibility,
+            gender: user.userProfile.gender,
+            isActive: user.userProfile.isActive,
+            createdAt: user.userProfile.createdAt
+              ? user.userProfile.createdAt.toISOString()
+              : null,
+            createdBy: user.userProfile.createdBy || null,
+            updatedAt: user.userProfile.updatedAt
+              ? user.userProfile.updatedAt.toISOString()
+              : null,
+            updatedBy: user.userProfile.updatedBy || null,
+            deletedAt: user.userProfile.deletedAt
+              ? user.userProfile.deletedAt.toISOString()
+              : null,
+            deletedBy: user.userProfile.deletedBy || null,
+          }
+        : null,
+    }));
+
+    const meta: PageMeta = {
+      page: params.page,
+      take: params.take,
+      itemCount: total,
+      pageCount: Math.ceil(total / params.take),
+      hasPreviousPage: params.page > 1,
+      hasNextPage: params.page < Math.ceil(total / params.take),
+    };
+
+    return { data, meta, message: 'Success' };
+  }
+
+  async getUsersInfo(params: GetUserInfoParams): Promise<UsersInfoResponse> {
+    const usersInfo = this.usersInfoRepository
+      .createQueryBuilder('userInfo')
+      .skip(params.skip)
+      .take(params.take)
+      .orderBy('userInfo.createdAt', params.order || 'DESC');
+
     const [result, total] = await usersInfo.getManyAndCount();
 
     const data: UserInfoResponse[] = result.map((user) => ({
@@ -93,11 +146,10 @@ export class UserInfoService {
     return { data, meta, message: 'Success' };
   }
 
-  async getUserInfoById(
-    request: GetUserInfoIdRequest,
-  ): Promise<UserInfoResponse> {
+  async getUserInfoById(request: GetUserInfoIdRequest): Promise<UserResponse> {
     const user = await this.usersInfoRepository
       .createQueryBuilder('userInfo')
+      .leftJoinAndSelect('userInfo.userProfile', 'userProfile')
       .where('userInfo.id = :id', { id: request.id })
       .getOne();
 
@@ -115,6 +167,41 @@ export class UserInfoService {
       updatedBy: user.updatedBy || '',
       deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
       deletedBy: user.deletedBy || '',
+      userProfile: user.userProfile
+        ? {
+            id: user.userProfile.id,
+            password: user.userProfile.password,
+            fullName: user.userProfile.fullName,
+            email: user.userProfile.email,
+            phoneNumber: user.userProfile.phoneNumber,
+            bio: user.userProfile.bio,
+            role: user.userProfile.role,
+            birthDate: user.userProfile.birthDate
+              ? user.userProfile.birthDate.toISOString().split('T')[0]
+              : null,
+            location: user.userProfile.location,
+            website: user.userProfile.website,
+            socialLinks: user.userProfile.socialLinks,
+            lastLogin: user.userProfile.lastLogin
+              ? user.userProfile.lastLogin.toISOString()
+              : null,
+            profileVisibility: user.userProfile.profileVisibility,
+            gender: user.userProfile.gender,
+            isActive: user.userProfile.isActive,
+            createdAt: user.userProfile.createdAt
+              ? user.userProfile.createdAt.toISOString()
+              : null,
+            createdBy: user.userProfile.createdBy || null,
+            updatedAt: user.userProfile.updatedAt
+              ? user.userProfile.updatedAt.toISOString()
+              : null,
+            updatedBy: user.userProfile.updatedBy || null,
+            deletedAt: user.userProfile.deletedAt
+              ? user.userProfile.deletedAt.toISOString()
+              : null,
+            deletedBy: user.userProfile.deletedBy || null,
+          }
+        : null,
     };
   }
 
