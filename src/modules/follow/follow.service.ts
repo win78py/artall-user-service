@@ -55,12 +55,10 @@ export class FollowService {
       deletedAt: follow.deletedAt ? follow.deletedAt.toISOString() : null,
       deletedBy: follow.deletedBy || null,
       follower: {
-        id: follow.follower.id,
         username: follow.follower.username,
         profilePicture: follow.follower.profilePicture,
       },
       following: {
-        id: follow.following.id,
         username: follow.following.username,
         profilePicture: follow.following.profilePicture,
       },

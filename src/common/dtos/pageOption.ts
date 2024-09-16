@@ -17,6 +17,12 @@ export class PageOptionsDto {
   @IsString()
   follower?: string = '';
 
+  @IsString()
+  blocker?: string = '';
+
+  @IsString()
+  blocked?: string = '';
+
   @IsEnum(Order)
   @IsOptional()
   order?: Order = Order.DESC;

@@ -13,6 +13,7 @@ import {
   CheckUserProfileExistsRequest,
   CheckUserProfileExistsResponse,
   CreateUserProfileRequest,
+  GetUserProfileByEmailResponse,
   GetUserProfileIdRequest,
   PageMeta,
   UpdateUserProfileRequest,
@@ -147,15 +148,58 @@ export class UserProfileService {
     };
   }
 
+  async findUserProfileByEmail(
+    email: string,
+  ): Promise<GetUserProfileByEmailResponse | null> {
+    const user = await this.usersProfileRepository.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      return { userProfile: null };
+    }
+
+    // Trả về đúng cấu trúc GetUserProfileByEmailResponse
+    return {
+      userProfile: {
+        id: user.id,
+        password: user.password,
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        bio: user.bio,
+        role: user.role,
+        birthDate: user.birthDate
+          ? user.birthDate.toISOString().split('T')[0]
+          : null,
+        location: user.location,
+        website: user.website,
+        socialLinks: user.socialLinks,
+        lastLogin: user.lastLogin ? user.lastLogin.toISOString() : null,
+        profileVisibility: user.profileVisibility,
+        gender: user.gender,
+        isActive: user.isActive,
+        createdAt: user.createdAt ? user.createdAt.toISOString() : null,
+        createdBy: user.createdBy || null,
+        updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+        updatedBy: user.updatedBy || null,
+        deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+        deletedBy: user.deletedBy || null,
+        userInfoId: user.userInfoId,
+      },
+    };
+  }
+
   async create(data: CreateUserProfileRequest): Promise<UserProfileResponse> {
     const userProfile = this.usersProfileRepository.create({
       ...data,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      lastLogin: data.lastLogin ? new Date(data.lastLogin) : null,
-      role: data.role as RoleEnum,
-      profileVisibility: data.profileVisibility as profileVisibilityEnum,
-      gender: data.gender as GenderEnum,
-    });
+      birthDate: data.birthDate ? new Date(data.birthDate) : null, // Chuyển đổi kiểu birthDate sang Date
+      lastLogin: data.lastLogin ? new Date(data.lastLogin) : null, // Chuyển đổi kiểu lastLogin sang Date
+      role: data.role || RoleEnum.USER, // Gán giá trị mặc định cho role
+      profileVisibility: data.profileVisibility || profileVisibilityEnum.PUBLIC, // Gán giá trị mặc định cho profileVisibility
+      gender: data.gender || GenderEnum.NULL, // Gán giá trị mặc định cho gender
+      isActive: typeof data.isActive === 'boolean' ? data.isActive : true,
+    } as UserProfile); // Cần cast kiểu về UserProfile
 
     await this.usersProfileRepository.save(userProfile);
 
@@ -167,7 +211,9 @@ export class UserProfileService {
       phoneNumber: userProfile.phoneNumber,
       bio: userProfile.bio,
       role: userProfile.role,
-      birthDate: userProfile.birthDate.toISOString().split('T')[0],
+      birthDate: userProfile.birthDate
+        ? userProfile.birthDate.toISOString().split('T')[0]
+        : null,
       location: userProfile.location,
       website: userProfile.website,
       socialLinks: userProfile.socialLinks,

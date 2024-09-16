@@ -19,11 +19,11 @@ export class BlockList extends AbstractEntity {
   @Column()
   blockedId: string;
 
-  @ManyToOne(() => UserInfo, (user) => user.follower)
+  @ManyToOne(() => UserInfo, (user) => user.blocker)
   @JoinColumn({ name: 'blockerId', referencedColumnName: 'id' })
   blocker: UserInfo;
 
-  @ManyToOne(() => UserInfo, (user) => user.following)
+  @ManyToOne(() => UserInfo, (user) => user.blocked)
   @JoinColumn({ name: 'blockedId', referencedColumnName: 'id' })
   blocked: UserInfo;
 

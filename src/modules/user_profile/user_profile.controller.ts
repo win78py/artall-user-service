@@ -8,6 +8,7 @@ import {
   CreateUserProfileRequest,
   DeleteUserProfileRequest,
   DeleteUserProfileResponse,
+  GetUserProfileByEmailResponse,
   GetUserProfileIdRequest,
   UpdateUserProfileRequest,
   UserProfileResponse,
@@ -30,6 +31,14 @@ export class UserProfileController {
     data: GetUserProfileIdRequest,
   ): Promise<UserProfileResponse> {
     return this.userProfileService.getUserProfileById(data);
+  }
+
+  // GET USER PROFILE BY EMAIL
+  @GrpcMethod('UserService', 'GetUserProfileEmail')
+  async findUserProfileByEmail(data: {
+    email: string;
+  }): Promise<GetUserProfileByEmailResponse> {
+    return this.userProfileService.findUserProfileByEmail(data.email);
   }
 
   //CREATE USER PROFILE

@@ -10,8 +10,8 @@ import {
   GetBlockIdRequest,
   BlockResponse,
   ManyBlockResponse,
+  GetAllBlockListRequest,
 } from 'src/common/interface/block.interface';
-import { GetBlockParams } from './dto/getList-block.dto';
 
 @Controller('block-list')
 export class BlockController {
@@ -19,7 +19,7 @@ export class BlockController {
 
   //GET ALL BLOCK LIST
   @GrpcMethod('UserService', 'GetAllBlockList')
-  async findAll(data: GetBlockParams): Promise<ManyBlockResponse> {
+  async findAll(data: GetAllBlockListRequest): Promise<ManyBlockResponse> {
     return this.blockService.getBlockList(data);
   }
 
