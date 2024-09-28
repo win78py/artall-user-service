@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { BlockList } from 'src/entities/blockList.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GetBlockParams } from './dto/getList-block.dto';
 import { Order } from 'src/common/enum/enum';
 import { validate as uuidValidate } from 'uuid';
 import {
@@ -13,6 +12,8 @@ import {
   GetBlockIdRequest,
   ManyBlockResponse,
   PageMeta,
+  BlockerBlockedResponse,
+  GetAllBlockListRequest,
 } from 'src/common/interface/block.interface';
 
 @Injectable()
@@ -23,20 +24,28 @@ export class BlockService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  async getBlockList(params: GetBlockParams): Promise<ManyBlockResponse> {
+  async getBlockList(
+    params: GetAllBlockListRequest,
+  ): Promise<ManyBlockResponse> {
     const block = this.blockRepository
       .createQueryBuilder('block')
-      .select(['block'])
+      .leftJoinAndSelect('block.blocker', 'blocker')
+      .leftJoinAndSelect('block.blocked', 'blocked')
       .skip(params.skip)
       .take(params.take)
       .orderBy('block.createdAt', Order.DESC);
-    if (params.search) {
-      block.andWhere('block.blockerId ILIKE :blockerId', {
-        block: `%${params.search}%`,
+    if (params.blocker) {
+      block.andWhere('block.blockerId = :blockerId', {
+        blockerId: params.blocker,
+      });
+    }
+    if (params.blocked) {
+      block.andWhere('block.blockedId = :blockedId', {
+        blockedId: params.blocked,
       });
     }
     const [result, total] = await block.getManyAndCount();
-    const data: BlockResponse[] = result.map((block) => ({
+    const data: BlockerBlockedResponse[] = result.map((block) => ({
       id: block.id,
       blockerId: block.blockerId,
       blockedId: block.blockedId,
@@ -46,6 +55,14 @@ export class BlockService {
       updatedBy: block.updatedBy || null,
       deletedAt: block.deletedAt ? block.deletedAt.toISOString() : null,
       deletedBy: block.deletedBy || null,
+      blocker: {
+        username: block.blocker.username,
+        profilePicture: block.blocker.profilePicture,
+      },
+      blocked: {
+        username: block.blocked.username,
+        profilePicture: block.blocked.profilePicture,
+      },
     }));
 
     const meta: PageMeta = {

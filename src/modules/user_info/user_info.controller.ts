@@ -7,13 +7,13 @@ import {
   CheckUserInfoExistsResponse,
   DeleteUserInfoRequest,
   DeleteUserInfoResponse,
+  GetAllUsersInfoRequest,
   GetUserInfoIdRequest,
   UpdateUserInfoRequest,
   UserInfoResponse,
   UserResponse,
   UsersResponse,
 } from '../../common/interface/userInfo.interface';
-import { GetUserInfoParams } from './dto/getList-user_info.dto';
 
 @Controller('user-info')
 export class UserInfoController {
@@ -21,13 +21,13 @@ export class UserInfoController {
 
   //GET ALL USERS
   @GrpcMethod('UserService', 'GetAllUsers')
-  async findAllUsers(data: GetUserInfoParams): Promise<UsersResponse> {
+  async findAllUsers(data: GetAllUsersInfoRequest): Promise<UsersResponse> {
     return this.userInfoService.getUsers(data);
   }
 
   //GET ALL USERS INFO
   @GrpcMethod('UserService', 'GetAllUsersInfo')
-  async findAll(data: GetUserInfoParams): Promise<UsersResponse> {
+  async findAll(data: GetAllUsersInfoRequest): Promise<UsersResponse> {
     return this.userInfoService.getUsersInfo(data);
   }
 
@@ -38,7 +38,7 @@ export class UserInfoController {
   }
 
   //GET USER INFO BY USERNAME
-  @Get(':userName')
+  @Get(':username')
   async findOneByUserName(@Param('id') username: string) {
     return this.userInfoService.getUserInfoByUsername(username);
   }

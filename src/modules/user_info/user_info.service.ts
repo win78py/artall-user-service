@@ -16,6 +16,7 @@ import {
   CheckUserInfoExistsRequest,
   CheckUserInfoExistsResponse,
   DeleteUserInfoResponse,
+  GetAllUsersInfoRequest,
   GetUserInfoIdRequest,
   PageMeta,
   UpdateUserInfoRequest,
@@ -24,7 +25,6 @@ import {
   UsersInfoResponse,
   UsersResponse,
 } from '../../common/interface/userInfo.interface';
-import { GetUserInfoParams } from './dto/getList-user_info.dto';
 import { RpcException } from '@nestjs/microservices';
 import { UserProfile } from '../../entities/userProfile.entity';
 import { BlockList } from '../../entities/blockList.entity';
@@ -32,6 +32,7 @@ import { Post } from '../../entities/post.entity';
 import { Like } from '../../entities/like.entity';
 import { LikeComment } from '../../entities/likeComment.entity';
 import { Comment } from '../../entities/comment.entity';
+import { Order } from 'src/common/enum/enum';
 
 @Injectable()
 export class UserInfoService {
@@ -44,13 +45,25 @@ export class UserInfoService {
     private readonly userProfileRepository: Repository<UserProfile>,
   ) {}
 
-  async getUsers(params: GetUserInfoParams): Promise<UsersResponse> {
+  async getUsers(params: GetAllUsersInfoRequest): Promise<UsersResponse> {
     const usersInfo = this.usersInfoRepository
       .createQueryBuilder('userInfo')
       .leftJoinAndSelect('userInfo.userProfile', 'userProfile')
       .skip(params.skip)
       .take(params.take)
-      .orderBy('userInfo.createdAt', params.order || 'DESC');
+      .orderBy('userInfo.createdAt', Order.DESC);
+
+    if (params.username) {
+      usersInfo.andWhere('userInfo.username ILIKE :username', {
+        username: `%${params.username}%`,
+      });
+    }
+
+    if (params.fullName) {
+      usersInfo.andWhere('userProfile.fullName ILIKE :fullName', {
+        fullName: `%${params.fullName}%`,
+      });
+    }
 
     const [result, total] = await usersInfo.getManyAndCount();
 
@@ -113,12 +126,20 @@ export class UserInfoService {
     return { data, meta, message: 'Success' };
   }
 
-  async getUsersInfo(params: GetUserInfoParams): Promise<UsersInfoResponse> {
+  async getUsersInfo(
+    params: GetAllUsersInfoRequest,
+  ): Promise<UsersInfoResponse> {
     const usersInfo = this.usersInfoRepository
       .createQueryBuilder('userInfo')
       .skip(params.skip)
       .take(params.take)
-      .orderBy('userInfo.createdAt', params.order || 'DESC');
+      .orderBy('userInfo.createdAt', Order.DESC);
+
+    if (params.username) {
+      usersInfo.andWhere('usersInfo.username ILIKE :username', {
+        username: `%${params.username}%`,
+      });
+    }
 
     const [result, total] = await usersInfo.getManyAndCount();
 
