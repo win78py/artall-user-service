@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { BlockList } from 'src/entities/blockList.entity';
+import { BlockList } from '../../entities/blockList.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from 'src/common/enum/enum';
+import { Order } from '../../common/enum/enum';
 import { validate as uuidValidate } from 'uuid';
 import {
   CheckBlockExistsRequest,
@@ -14,7 +14,7 @@ import {
   PageMeta,
   BlockerBlockedResponse,
   GetAllBlockListRequest,
-} from 'src/common/interface/block.interface';
+} from '../../common/interface/block.interface';
 
 @Injectable()
 export class BlockService {

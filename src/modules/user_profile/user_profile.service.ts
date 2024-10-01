@@ -5,10 +5,10 @@ import {
   GenderEnum,
   profileVisibilityEnum,
   RoleEnum,
-} from 'src/common/enum/enum';
+} from '../../common/enum/enum';
 import { GetUserProfileParams } from './dto/getList-user_profile.dto';
 import { UserNotFoundException } from '../../common/exceptions/not-found';
-import { UserProfile } from 'src/entities/userProfile.entity';
+import { UserProfile } from '../../entities/userProfile.entity';
 import {
   CheckUserProfileExistsRequest,
   CheckUserProfileExistsResponse,
@@ -19,7 +19,7 @@ import {
   UpdateUserProfileRequest,
   UserProfileResponse,
   UsersProfileResponse,
-} from 'src/common/interface/userProfile.interface';
+} from '../../common/interface/userProfile.interface';
 import { RpcException } from '@nestjs/microservices';
 
 @Injectable()

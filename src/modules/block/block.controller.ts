@@ -11,7 +11,7 @@ import {
   BlockResponse,
   ManyBlockResponse,
   GetAllBlockListRequest,
-} from 'src/common/interface/block.interface';
+} from '../../common/interface/block.interface';
 
 @Controller('block-list')
 export class BlockController {

@@ -32,7 +32,7 @@ import { Post } from '../../entities/post.entity';
 import { Like } from '../../entities/like.entity';
 import { LikeComment } from '../../entities/likeComment.entity';
 import { Comment } from '../../entities/comment.entity';
-import { Order } from 'src/common/enum/enum';
+import { Order } from '../../common/enum/enum';
 
 @Injectable()
 export class UserInfoService {
