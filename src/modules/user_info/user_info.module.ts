@@ -5,8 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserInfo } from '../../entities/userInfo.entity';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UserProfileService } from '../user_profile/user_profile.service';
-import { UserProfile } from 'src/entities/userProfile.entity';
-import { Follow } from 'src/entities/follow.entity';
+import { UserProfile } from '../../entities/userProfile.entity';
+import { Follow } from '../..//entities/follow.entity';
 import { FollowService } from '../follow/follow.service';
 
 @Module({

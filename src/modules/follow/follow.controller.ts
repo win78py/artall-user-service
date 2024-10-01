@@ -11,7 +11,7 @@ import {
   FollowResponse,
   ManyFollowResponse,
   GetAllFollowRequest,
-} from 'src/common/interface/follow.interface';
+} from '../../common/interface/follow.interface';
 
 @Controller('follow')
 export class FollowController {

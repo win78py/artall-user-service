@@ -13,7 +13,7 @@ import {
   UpdateUserProfileRequest,
   UserProfileResponse,
   UsersProfileResponse,
-} from 'src/common/interface/userProfile.interface';
+} from '../../common/interface/userProfile.interface';
 
 @Controller('user-profile')
 export class UserProfileController {

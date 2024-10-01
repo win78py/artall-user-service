@@ -6,7 +6,7 @@ import {
   Column,
 } from 'typeorm';
 import { UserInfo } from '../entities/userInfo.entity';
-import { AbstractEntity } from 'src/common/entities';
+import { AbstractEntity } from '../common/entities/abstract.entity';
 
 @Entity()
 export class Follow extends AbstractEntity {

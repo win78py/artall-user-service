@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Follow } from 'src/entities/follow.entity';
+import { Follow } from '../../entities/follow.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from 'src/common/enum/enum';
+import { Order } from '../../common/enum/enum';
 import { validate as uuidValidate } from 'uuid';
-import { FollowNotFoundException } from 'src/common/exceptions/not-found';
+import { FollowNotFoundException } from '../../common/exceptions/not-found';
 import {
   CheckFollowExistsRequest,
   CheckFollowExistsResponse,
@@ -15,7 +15,7 @@ import {
   GetFollowIdRequest,
   ManyFollowResponse,
   PageMeta,
-} from 'src/common/interface/follow.interface';
+} from '../../common/interface/follow.interface';
 
 @Injectable()
 export class FollowService {
