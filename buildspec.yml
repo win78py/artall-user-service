@@ -2,9 +2,8 @@ version: 0.2
 
 env:
   variables:
-    AWS_DEFAULT_REGION: us-east-1                   # Thay thế bằng khu vực của bạn
-    REPOSITORY_URI: 590183762922.dkr.ecr.us-east-1.amazonaws.com/artall/gateway  # Thay thế bằng URI repository của bạn
-
+    AWS_DEFAULT_REGION: us-east-1
+    REPOSITORY_URI: 590183762922.dkr.ecr.us-east-1.amazonaws.com/artall/user-service
 phases:
   install:
     commands:
@@ -16,12 +15,12 @@ phases:
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
   build:
     commands:
-      - docker build -t my-app .
-      - docker tag my-app:latest $REPOSITORY_URI:latest
+      - docker build -t user-server .
+      - docker tag user-server:latest $REPOSITORY_URI:latest
   post_build:
     commands:
       - docker push $REPOSITORY_URI:latest
-      - printf '[{"name":"my-app","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+      - printf '[{"name":"user-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 
 artifacts:
   files:
