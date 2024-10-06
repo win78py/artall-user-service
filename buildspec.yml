@@ -15,12 +15,12 @@ phases:
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
   build:
     commands:
-      - docker build -t user-server .
-      - docker tag user-server:latest $REPOSITORY_URI:latest
+      - docker build -t user-service .
+      - docker tag user-service:latest $REPOSITORY_URI:latest
   post_build:
     commands:
       - docker push $REPOSITORY_URI:latest
-      - printf '[{"name":"user-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+      - printf '[{"name":"user-service","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 
 artifacts:
   files:
