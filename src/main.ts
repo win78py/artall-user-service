@@ -15,26 +15,7 @@ async function bootstrap() {
 
   // Kết nối microservice gRPC
   app.connectMicroservice<MicroserviceOptions>(grpcClientOptions);
-
-  // Hàm thử lại để khởi động microservice
-  const startMicroserviceWithRetry = async (retries = 5) => {
-    try {
-      await app.startAllMicroservices();
-      console.log('gRPC microservice is running');
-    } catch (err) {
-      console.error('Error starting microservice:', err);
-      if (retries > 0) {
-        console.log(
-          `Retrying to start gRPC microservice... (${retries} retries left)`,
-        );
-        await new Promise((res) => setTimeout(res, 3000)); // Thử lại sau 3 giây
-        await startMicroserviceWithRetry(retries - 1); // Gọi lại hàm với số lần thử lại giảm đi
-      }
-    }
-  };
-
-  // Khởi động microservice gRPC với cơ chế thử lại
-  await startMicroserviceWithRetry();
+  await app.startAllMicroservices();
 
   // Cấu hình pipes và exception filter toàn cục
   app.useGlobalPipes(
