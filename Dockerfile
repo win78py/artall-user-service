@@ -34,7 +34,7 @@ COPY --from=builder /app/yarn.lock ./yarn.lock
 RUN yarn install --production
 
 # Expose cổng mà ứng dụng sẽ chạy
-EXPOSE 50051
+EXPOSE 3001 50051
 
 # Lệnh để chạy ứng dụng
 CMD ["node", "dist/main"]
