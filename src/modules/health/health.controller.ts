@@ -1,19 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import {
-  HealthCheckRequest,
-  HealthCheckResponse,
-  ServingStatus,
-} from '../../common/interface/health.interface';
-
+import { HealthCheckResponse } from '../../common/interface/health.interface';
+import { HealthService } from './health.service';
 @Controller()
 export class HealthController {
-  @GrpcMethod('Health', 'Check')
-  checkHealth(data: HealthCheckRequest): HealthCheckResponse {
-    console.log('Health check request for service:', data.service);
+  constructor(private readonly healthService: HealthService) {}
 
-    return {
-      status: ServingStatus.SERVING,
-    };
+  @GrpcMethod('Health', 'Check')
+  checkHealth(): HealthCheckResponse {
+    // Gọi service để trả về kết quả
+    return this.healthService.check();
   }
 }

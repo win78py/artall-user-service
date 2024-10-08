@@ -9,11 +9,5 @@ export interface HealthCheckRequest {
 }
 
 export interface HealthCheckResponse {
-  status: ServingStatus;
-}
-
-export enum ServingStatus {
-  UNKNOWN = 0,
-  SERVING = 1,
-  NOT_SERVING = 2,
+  message: string;
 }
