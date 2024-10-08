@@ -6,7 +6,7 @@ export const grpcClientOptions: ClientProviderOptions = {
   name: 'USER_SERVICE',
   transport: Transport.GRPC,
   options: {
-    package: ['users', 'grpc.health.v1'],
+    package: ['users', 'health'],
     protoPath: [
       join(__dirname, '../grpc/users.proto'),
       join(__dirname, '../grpc/health.proto'),
