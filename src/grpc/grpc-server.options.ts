@@ -11,6 +11,7 @@ export const grpcClientOptions: ClientProviderOptions = {
       join(__dirname, '../grpc/users.proto'),
       join(__dirname, '../grpc/health.proto'),
     ],
+    url: '0.0.0.0:50051',
     maxReceiveMessageLength: 20 * 1024 * 1024,
     maxSendMessageLength: 20 * 1024 * 1024,
   },
