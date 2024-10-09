@@ -6,8 +6,10 @@ import { grpcClientOptions } from './grpc/grpc-server.options';
 import { UserExceptionFilter } from './common/exceptions/user.exception';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
   app.enableCors();
-  // Chỉ chạy gRPC
+  await app.listen(3001);
+
   app.connectMicroservice<MicroserviceOptions>(grpcClientOptions);
   await app.startAllMicroservices();
 
