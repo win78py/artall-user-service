@@ -8,9 +8,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.enableCors();
-  await app.listen(3001);
+  // Chỉ chạy gRPC
   app.connectMicroservice<MicroserviceOptions>(grpcClientOptions);
   await app.startAllMicroservices();
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
