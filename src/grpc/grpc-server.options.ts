@@ -11,7 +11,7 @@ export const grpcClientOptions: ClientProviderOptions = {
       join(__dirname, '../grpc/users.proto'),
       join(__dirname, '../grpc/health.proto'),
     ],
-    url: '0.0.0.0:50051',
+    url: 'artall-Services-376830826.us-east-1.elb.amazonaws.com:50051',
     maxReceiveMessageLength: 20 * 1024 * 1024,
     maxSendMessageLength: 20 * 1024 * 1024,
   },
