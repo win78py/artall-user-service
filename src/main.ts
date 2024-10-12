@@ -6,7 +6,7 @@ import { grpcClientOptions } from './grpc/grpc-server.options';
 import { UserExceptionFilter } from './common/exceptions/user.exception';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('user-svc');
   app.enableCors();
   await app.listen(3001);
 
