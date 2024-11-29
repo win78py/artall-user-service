@@ -17,6 +17,7 @@ import {
   GetUserProfileIdRequest,
   PageMeta,
   UpdateUserProfileRequest,
+  UserDemographicsResponse,
   UserProfileResponse,
   UsersProfileResponse,
 } from '../../common/interface/userProfile.interface';
@@ -110,6 +111,52 @@ export class UserProfileService {
     };
 
     return { data, meta, message: 'Success' };
+  }
+
+  async getUserDemographics(
+    data: GetUserProfileParams,
+  ): Promise<UserDemographicsResponse> {
+    const ageGroups = ['40+', '35-39', '30-34', '25-29', '20-24', '16-19'];
+    console.log('GetUserProfileParams', data);
+    const currentYear = new Date().getFullYear();
+
+    // Chúng ta sẽ lưu trữ kết quả đếm số lượng người dùng theo từng nhóm tuổi và giới tính
+    const demographics = ageGroups.map((group) => ({
+      ageGroup: group,
+      maleCount: 0,
+      femaleCount: 0,
+    }));
+
+    // Truy vấn tất cả người dùng trong database
+    const users = await this.usersProfileRepository.find();
+
+    // Lặp qua tất cả người dùng để phân loại vào các nhóm tuổi và giới tính
+    users.forEach((user) => {
+      const birthYear = user.birthDate.getFullYear();
+      const age = currentYear - birthYear;
+
+      let ageGroupIndex = -1;
+
+      // Xác định nhóm tuổi của người dùng
+      if (age >= 40) ageGroupIndex = 0;
+      else if (age >= 35) ageGroupIndex = 1;
+      else if (age >= 30) ageGroupIndex = 2;
+      else if (age >= 25) ageGroupIndex = 3;
+      else if (age >= 20) ageGroupIndex = 4;
+      else if (age >= 16) ageGroupIndex = 5;
+
+      // Nếu ageGroupIndex hợp lệ, cập nhật số lượng người dùng
+      if (ageGroupIndex !== -1) {
+        if (user.gender === GenderEnum.MALE) {
+          demographics[ageGroupIndex].maleCount++;
+        } else if (user.gender === GenderEnum.FEMALE) {
+          demographics[ageGroupIndex].femaleCount++;
+        }
+      }
+    });
+
+    // Trả về kết quả
+    return { demographics };
   }
 
   async getUserProfileById(

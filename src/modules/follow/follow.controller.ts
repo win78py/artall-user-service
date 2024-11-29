@@ -11,6 +11,7 @@ import {
   FollowResponse,
   ManyFollowResponse,
   GetAllFollowRequest,
+  ToggleFollowResponse,
 } from '../../common/interface/follow.interface';
 
 @Controller('follow')
@@ -33,6 +34,18 @@ export class FollowController {
   @GrpcMethod('UserService', 'CreateFollow')
   async createFollow(data: CreateFollowRequest): Promise<FollowResponse> {
     return this.followService.create(data);
+  }
+
+  //TOGGLE FOLLOW
+  @GrpcMethod('UserService', 'ToggleFollow')
+  async toggleFollow(request: {
+    followerId: string;
+    followingId: string;
+  }): Promise<ToggleFollowResponse> {
+    return this.followService.toggleFollow(
+      request.followerId,
+      request.followingId,
+    );
   }
 
   //CHECK FOLLOW EXISTS
