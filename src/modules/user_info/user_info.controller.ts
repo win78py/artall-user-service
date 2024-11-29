@@ -8,7 +8,10 @@ import {
   DeleteUserInfoRequest,
   DeleteUserInfoResponse,
   GetAllUsersInfoRequest,
+  GetTotalUsersInfoRequest,
   GetUserInfoIdRequest,
+  SuggestedUsersResponse,
+  TotalUsersResponse,
   UpdateUserInfoRequest,
   UserInfoResponse,
   UserResponse,
@@ -25,15 +28,42 @@ export class UserInfoController {
     return this.userInfoService.getUsers(data);
   }
 
+  @GrpcMethod('UserService', 'GetAllUsersDeleted')
+  async findAllUsersDeleted(
+    data: GetAllUsersInfoRequest,
+  ): Promise<UsersResponse> {
+    return this.userInfoService.getUsersDeleted(data);
+  }
+
   //GET ALL USERS INFO
   @GrpcMethod('UserService', 'GetAllUsersInfo')
   async findAll(data: GetAllUsersInfoRequest): Promise<UsersResponse> {
     return this.userInfoService.getUsersInfo(data);
   }
 
+  @GrpcMethod('UserService', 'GetSuggestedUsers')
+  async findSuggestedUsers(
+    data: GetAllUsersInfoRequest,
+  ): Promise<SuggestedUsersResponse> {
+    return this.userInfoService.getSuggestedUsers(data);
+  }
+
+  @GrpcMethod('UserService', 'GetTotalUsersInfo')
+  async findTotalUserInfo(
+    data: GetTotalUsersInfoRequest,
+  ): Promise<TotalUsersResponse> {
+    return this.userInfoService.getTotalUserInfo(data);
+  }
+
+  //GET USER BY ID
+  @GrpcMethod('UserService', 'GetUserId')
+  async findOneUserById(data: GetUserInfoIdRequest): Promise<UserResponse> {
+    return this.userInfoService.getUserById(data);
+  }
+
   //GET USER INFO BY ID
   @GrpcMethod('UserService', 'GetUserInfoId')
-  async findOneById(data: GetUserInfoIdRequest): Promise<UserResponse> {
+  async findOneUserInfoById(data: GetUserInfoIdRequest): Promise<UserResponse> {
     return this.userInfoService.getUserInfoById(data);
   }
 

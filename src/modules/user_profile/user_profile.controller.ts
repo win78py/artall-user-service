@@ -11,6 +11,7 @@ import {
   GetUserProfileByEmailResponse,
   GetUserProfileIdRequest,
   UpdateUserProfileRequest,
+  UserDemographicsResponse,
   UserProfileResponse,
   UsersProfileResponse,
 } from '../../common/interface/userProfile.interface';
@@ -23,6 +24,13 @@ export class UserProfileController {
   @GrpcMethod('UserService', 'GetAllUsersProfile')
   async findAll(data: GetUserProfileParams): Promise<UsersProfileResponse> {
     return this.userProfileService.getUsersProfile(data);
+  }
+
+  @GrpcMethod('UserService', 'GetUserDemographics')
+  async findDemographics(
+    data: GetUserProfileParams,
+  ): Promise<UserDemographicsResponse> {
+    return this.userProfileService.getUserDemographics(data);
   }
 
   //GET USER PROFILE BY ID

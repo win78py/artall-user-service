@@ -15,6 +15,7 @@ import {
   GetFollowIdRequest,
   ManyFollowResponse,
   PageMeta,
+  ToggleFollowResponse,
 } from '../../common/interface/follow.interface';
 
 @Injectable()
@@ -41,6 +42,17 @@ export class FollowService {
     if (params.following) {
       follow.andWhere('follow.followingId = :followingId', {
         followingId: params.following,
+      });
+    }
+    if (params.followerUsername) {
+      follow.andWhere('follower.username ILIKE :followerUsername', {
+        followerUsername: `%${params.followerUsername}%`,
+      });
+    }
+
+    if (params.followingUsername) {
+      follow.andWhere('following.username ILIKE :followingUsername', {
+        followingUsername: `%${params.followingUsername}%`,
       });
     }
     const [result, total] = await follow.getManyAndCount();
@@ -113,6 +125,29 @@ export class FollowService {
       deletedAt: follow.deletedAt ? follow.deletedAt.toISOString() : null,
       deletedBy: follow.deletedBy || null,
     };
+  }
+
+  async toggleFollow(
+    followerId: string,
+    followingId: string,
+  ): Promise<ToggleFollowResponse> {
+    const existingFollow = await this.followRepository.findOne({
+      where: { followerId, followingId },
+    });
+
+    if (existingFollow) {
+      await this.remove(existingFollow.id);
+      return {
+        data: null,
+        message: 'Follow removed',
+      };
+    } else {
+      const follow = await this.create({ followerId, followingId });
+      return {
+        data: follow,
+        message: 'Follow added',
+      };
+    }
   }
 
   async checkFollowExists(

@@ -17,8 +17,13 @@ import {
   CheckUserInfoExistsResponse,
   DeleteUserInfoResponse,
   GetAllUsersInfoRequest,
+  GetTotalUsersInfoRequest,
+  GetUserIdRequest,
   GetUserInfoIdRequest,
   PageMeta,
+  SuggestedUserResponse,
+  SuggestedUsersResponse,
+  TotalUsersResponse,
   UpdateUserInfoRequest,
   UserInfoResponse,
   UserResponse,
@@ -53,6 +58,89 @@ export class UserInfoService {
       .take(params.take)
       .orderBy('userInfo.createdAt', Order.DESC);
 
+    if (params.username) {
+      usersInfo.andWhere('userInfo.username ILIKE :username', {
+        username: `%${params.username}%`,
+      });
+    }
+
+    if (params.fullName) {
+      usersInfo.andWhere('userProfile.fullName ILIKE :fullName', {
+        fullName: `%${params.fullName}%`,
+      });
+    }
+    const [result, total] = await usersInfo.getManyAndCount();
+
+    const data: UserInfoResponse[] = result.map((user) => ({
+      id: user.id,
+      username: user.username,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt ? user.createdAt.toISOString() : null,
+      createdBy: user.createdBy || null,
+      updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+      updatedBy: user.updatedBy || null,
+      deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+      deletedBy: user.deletedBy || null,
+      userProfile: user.userProfile
+        ? {
+            id: user.userProfile.id,
+            password: user.userProfile.password,
+            fullName: user.userProfile.fullName,
+            email: user.userProfile.email,
+            phoneNumber: user.userProfile.phoneNumber,
+            bio: user.userProfile.bio,
+            role: user.userProfile.role,
+            birthDate: user.userProfile.birthDate
+              ? user.userProfile.birthDate.toISOString().split('T')[0]
+              : null,
+            location: user.userProfile.location,
+            website: user.userProfile.website,
+            socialLinks: user.userProfile.socialLinks,
+            lastLogin: user.userProfile.lastLogin
+              ? user.userProfile.lastLogin.toISOString()
+              : null,
+            profileVisibility: user.userProfile.profileVisibility,
+            gender: user.userProfile.gender,
+            isActive: user.userProfile.isActive,
+            createdAt: user.userProfile.createdAt
+              ? user.userProfile.createdAt.toISOString()
+              : null,
+            createdBy: user.userProfile.createdBy || null,
+            updatedAt: user.userProfile.updatedAt
+              ? user.userProfile.updatedAt.toISOString()
+              : null,
+            updatedBy: user.userProfile.updatedBy || null,
+            deletedAt: user.userProfile.deletedAt
+              ? user.userProfile.deletedAt.toISOString()
+              : null,
+            deletedBy: user.userProfile.deletedBy || null,
+          }
+        : null,
+    }));
+
+    const meta: PageMeta = {
+      page: params.page,
+      take: params.take,
+      itemCount: total,
+      pageCount: Math.ceil(total / params.take),
+      hasPreviousPage: params.page > 1,
+      hasNextPage: params.page < Math.ceil(total / params.take),
+    };
+
+    return { data, meta, message: 'Success' };
+  }
+
+  async getUsersDeleted(
+    params: GetAllUsersInfoRequest,
+  ): Promise<UsersResponse> {
+    const usersInfo = this.usersInfoRepository
+      .createQueryBuilder('userInfo')
+      .withDeleted()
+      .leftJoinAndSelect('userInfo.userProfile', 'userProfile')
+      .where('userInfo.deletedAt IS NOT NULL')
+      .skip(params.skip)
+      .take(params.take)
+      .orderBy('userInfo.deletedAt', Order.DESC);
     if (params.username) {
       usersInfo.andWhere('userInfo.username ILIKE :username', {
         username: `%${params.username}%`,
@@ -126,6 +214,157 @@ export class UserInfoService {
     return { data, meta, message: 'Success' };
   }
 
+  async getTotalUserInfo(
+    params: GetTotalUsersInfoRequest,
+  ): Promise<TotalUsersResponse> {
+    const period = params.period || 'year';
+    const total = await this.usersInfoRepository.count();
+    const joinCounts: Record<number, number> = {};
+    // Tính năm trước
+    const pastYear = new Date();
+    pastYear.setFullYear(pastYear.getFullYear() - 1);
+
+    // Khai báo các biến để lưu trữ số lượng người dùng cũ và hiện tại
+    let oldCount, currentCount;
+
+    // Nếu khoảng thời gian là 'năm'
+    if (period === 'year') {
+      // Đếm số lượng người dùng trong năm trước và năm hiện tại
+      oldCount = await this.usersInfoRepository
+        .createQueryBuilder('userInfo')
+        .where('EXTRACT(YEAR FROM userInfo.createdAt) = :pastYear', {
+          pastYear: pastYear.getFullYear(),
+        })
+        .getCount();
+
+      currentCount = await this.usersInfoRepository
+        .createQueryBuilder('userInfo')
+        .where('EXTRACT(YEAR FROM userInfo.createdAt) = :currentYear', {
+          currentYear: new Date().getFullYear(),
+        })
+        .getCount();
+    } else if (period === 'month') {
+      const currentMonth = new Date().getMonth() + 1;
+      const pastMonth = currentMonth - 1 === 0 ? 12 : currentMonth - 1;
+      const currentYear = new Date().getFullYear();
+      const pastYear = currentMonth - 1 === 0 ? currentYear - 1 : currentYear;
+
+      oldCount = await this.usersInfoRepository
+        .createQueryBuilder('userInfo')
+        .where('EXTRACT(YEAR FROM userInfo.createdAt) = :pastYear', {
+          pastYear: pastYear,
+        })
+        .andWhere('EXTRACT(MONTH FROM userInfo.createdAt) = :pastMonth', {
+          pastMonth: pastMonth,
+        })
+        .getCount();
+
+      currentCount = await this.usersInfoRepository
+        .createQueryBuilder('userInfo')
+        .where('EXTRACT(YEAR FROM userInfo.createdAt) = :currentYear', {
+          currentYear: currentYear,
+        })
+        .andWhere('EXTRACT(MONTH FROM userInfo.createdAt) = :currentMonth', {
+          currentMonth: currentMonth,
+        })
+        .getCount();
+    } else if (period === 'count_join') {
+      // Nếu khoảng thời gian là 'count_join'
+      const currentYear = new Date().getFullYear();
+
+      // Đếm số lượng contribution được tạo theo từng tháng trong năm hiện tại
+      for (let month = 0; month < 12; month++) {
+        const count = await this.usersInfoRepository
+          .createQueryBuilder('userInfo')
+          .where('EXTRACT(YEAR FROM userInfo.createdAt) = :year', {
+            year: currentYear,
+          })
+          .andWhere('EXTRACT(MONTH FROM userInfo.createdAt) = :month', {
+            month: month + 1,
+          })
+          .getCount();
+
+        joinCounts[month + 1] = count;
+      }
+    }
+
+    const percentageUserChange =
+      oldCount === 0 ? 100 : ((currentCount - oldCount) / oldCount) * 100;
+
+    return {
+      total,
+      oldCount,
+      currentCount,
+      percentageUserChange,
+      joinCounts: joinCounts,
+    };
+  }
+
+  async getUserById(request: GetUserIdRequest): Promise<UserResponse> {
+    const user = await this.usersInfoRepository
+      .createQueryBuilder('userInfo')
+      .leftJoinAndSelect('userInfo.userProfile', 'userProfile')
+      .leftJoinAndSelect('userInfo.post', 'post')
+      .leftJoinAndSelect('userInfo.follower', 'follower')
+      .leftJoinAndSelect('userInfo.following', 'following')
+      .where('userInfo.id = :id', { id: request.id })
+      .getOne();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${request.id} not found`);
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt ? user.createdAt.toISOString() : null,
+      createdBy: user.createdBy || '',
+      updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+      updatedBy: user.updatedBy || '',
+      deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+      deletedBy: user.deletedBy || '',
+      postCount: user.post.length,
+      followerCount: user.following.length,
+      followingCount: user.follower.length,
+      userProfile: user.userProfile
+        ? {
+            id: user.userProfile.id,
+            password: user.userProfile.password,
+            fullName: user.userProfile.fullName,
+            email: user.userProfile.email,
+            phoneNumber: user.userProfile.phoneNumber,
+            bio: user.userProfile.bio,
+            role: user.userProfile.role,
+            birthDate: user.userProfile.birthDate
+              ? user.userProfile.birthDate.toISOString().split('T')[0]
+              : null,
+            location: user.userProfile.location,
+            website: user.userProfile.website,
+            socialLinks: user.userProfile.socialLinks,
+            lastLogin: user.userProfile.lastLogin
+              ? user.userProfile.lastLogin.toISOString()
+              : null,
+            profileVisibility: user.userProfile.profileVisibility,
+            gender: user.userProfile.gender,
+            isActive: user.userProfile.isActive,
+            createdAt: user.userProfile.createdAt
+              ? user.userProfile.createdAt.toISOString()
+              : null,
+            createdBy: user.userProfile.createdBy || null,
+            updatedAt: user.userProfile.updatedAt
+              ? user.userProfile.updatedAt.toISOString()
+              : null,
+            updatedBy: user.userProfile.updatedBy || null,
+            deletedAt: user.userProfile.deletedAt
+              ? user.userProfile.deletedAt.toISOString()
+              : null,
+            deletedBy: user.userProfile.deletedBy || null,
+          }
+        : null,
+    };
+  }
+
   async getUsersInfo(
     params: GetAllUsersInfoRequest,
   ): Promise<UsersInfoResponse> {
@@ -136,7 +375,7 @@ export class UserInfoService {
       .orderBy('userInfo.createdAt', Order.DESC);
 
     if (params.username) {
-      usersInfo.andWhere('usersInfo.username ILIKE :username', {
+      usersInfo.andWhere('userInfo.username ILIKE :username', {
         username: `%${params.username}%`,
       });
     }
@@ -147,6 +386,57 @@ export class UserInfoService {
       id: user.id,
       username: user.username,
       profilePicture: user.profilePicture,
+      createdAt: user.createdAt ? user.createdAt.toISOString() : null,
+      createdBy: user.createdBy || null,
+      updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+      updatedBy: user.updatedBy || null,
+      deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+      deletedBy: user.deletedBy || null,
+    }));
+
+    const meta: PageMeta = {
+      page: params.page,
+      take: params.take,
+      itemCount: total,
+      pageCount: Math.ceil(total / params.take),
+      hasPreviousPage: params.page > 1,
+      hasNextPage: params.page < Math.ceil(total / params.take),
+    };
+
+    return { data, meta, message: 'Success' };
+  }
+
+  async getSuggestedUsers(
+    params: GetAllUsersInfoRequest,
+  ): Promise<SuggestedUsersResponse> {
+    const usersInfo = this.usersInfoRepository
+      .createQueryBuilder('userInfo')
+      .leftJoinAndSelect('userInfo.follower', 'follower')
+      .orderBy('userInfo.createdAt', 'DESC');
+
+    // Lọc theo username nếu có
+    if (params.username) {
+      usersInfo.andWhere('userInfo.username ILIKE :username', {
+        username: `%${params.username}%`,
+      });
+    }
+
+    const [result, total] = await usersInfo.getManyAndCount();
+
+    // Lọc và sắp xếp theo số lượng người theo dõi
+    const sortedData = result
+      .map((user) => ({
+        ...user,
+        followerCount: user.follower ? user.follower.length : 0, // Đếm số lượng người theo dõi
+      }))
+      .sort((a, b) => b.followerCount - a.followerCount) // Sắp xếp theo followerCount giảm dần
+      .slice(0, 5); // Giới hạn lấy chỉ 30 người
+
+    const data: SuggestedUserResponse[] = sortedData.map((user) => ({
+      id: user.id,
+      username: user.username,
+      profilePicture: user.profilePicture,
+      followerCount: user.followerCount,
       createdAt: user.createdAt ? user.createdAt.toISOString() : null,
       createdBy: user.createdBy || null,
       updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
