@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { UserInfoService } from './user_info.service';
 import { CreateUserInfoDto } from './dto/create-user_info.dto';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -100,5 +100,11 @@ export class UserInfoController {
   ): Promise<DeleteUserInfoResponse> {
     const { id } = request;
     return this.userInfoService.remove(id);
+  }
+
+  @Post(':id/restore')
+  async restoreUserInfo(@Param('id') id: string): Promise<UserInfoResponse> {
+    const restoreUserInfo = await this.userInfoService.restoreUserInfo(id);
+    return restoreUserInfo;
   }
 }
