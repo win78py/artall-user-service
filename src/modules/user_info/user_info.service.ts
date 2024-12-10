@@ -3,6 +3,7 @@ import {
   HttpException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, FindOneOptions, In, Repository } from 'typeorm';
@@ -38,9 +39,11 @@ import { Like } from '../../entities/like.entity';
 import { LikeComment } from '../../entities/likeComment.entity';
 import { Comment } from '../../entities/comment.entity';
 import { Order } from '../../common/enum/enum';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class UserInfoService {
+  private readonly logger = new Logger(UserInfoService.name);
   constructor(
     @InjectRepository(UserInfo)
     private readonly usersInfoRepository: Repository<UserInfo>,
@@ -48,6 +51,7 @@ export class UserInfoService {
     private readonly cloudinaryService: CloudinaryService,
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getUsers(params: GetAllUsersInfoRequest): Promise<UsersResponse> {
@@ -663,6 +667,121 @@ export class UserInfoService {
       data: null,
       message: 'User Info deletion successful',
     };
+  }
+
+  async restoreUserInfo(userId: string): Promise<UserInfoResponse> {
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    try {
+      await queryRunner.startTransaction();
+
+      // 1. Tìm và kiểm tra userInfo
+      const userInfo = await queryRunner.manager
+        .createQueryBuilder(UserInfo, 'userInfo')
+        .withDeleted()
+        .where('userInfo.id = :userId', { userId })
+        .andWhere('userInfo.deletedAt IS NOT NULL')
+        .getOne();
+
+      if (!userInfo) {
+        throw new RpcException('UserInfo not found or already restored');
+      }
+
+      // 2. Khôi phục userInfo
+      userInfo.deletedAt = null;
+      userInfo.deletedBy = null;
+      await queryRunner.manager.save(userInfo);
+
+      // 3. Khôi phục userProfile liên quan
+      const userProfile = await queryRunner.manager
+        .createQueryBuilder(UserProfile, 'userProfile')
+        .withDeleted()
+        .where('userProfile.userInfoId = :userId', { userId })
+        .andWhere('userProfile.deletedAt IS NOT NULL')
+        .getOne();
+
+      if (userProfile) {
+        userProfile.deletedAt = null;
+        userProfile.deletedBy = null;
+        await queryRunner.manager.save(userProfile);
+      }
+
+      // 4. Khôi phục các bài post liên quan
+      const posts = await queryRunner.manager
+        .createQueryBuilder(Post, 'post')
+        .withDeleted()
+        .where('post.userId = :userId', { userId })
+        .andWhere('post.deletedAt IS NOT NULL')
+        .getMany();
+
+      for (const post of posts) {
+        post.deletedAt = null;
+        post.deletedBy = null;
+        await queryRunner.manager.save(post);
+
+        // Khôi phục các comment liên quan đến post
+        const comments = await queryRunner.manager
+          .createQueryBuilder(Comment, 'comment')
+          .withDeleted()
+          .where('comment.postId = :postId', { postId: post.id })
+          .andWhere('comment.deletedAt IS NOT NULL')
+          .getMany();
+
+        for (const comment of comments) {
+          comment.deletedAt = null;
+          comment.deletedBy = null;
+          await queryRunner.manager.save(comment);
+
+          // Khôi phục các likeComment liên quan đến comment
+          const likeComments = await queryRunner.manager
+            .createQueryBuilder(LikeComment, 'likeComment')
+            .withDeleted()
+            .where('likeComment.commentId = :commentId', {
+              commentId: comment.id,
+            })
+            .andWhere('likeComment.deletedAt IS NOT NULL')
+            .getMany();
+
+          for (const likeComment of likeComments) {
+            likeComment.deletedAt = null;
+            likeComment.deletedBy = null;
+            await queryRunner.manager.save(likeComment);
+          }
+        }
+
+        // Khôi phục các like liên quan đến post
+        const likes = await queryRunner.manager
+          .createQueryBuilder(Like, 'like')
+          .withDeleted()
+          .where('like.postId = :postId', { postId: post.id })
+          .andWhere('like.deletedAt IS NOT NULL')
+          .getMany();
+
+        for (const like of likes) {
+          like.deletedAt = null;
+          like.deletedBy = null;
+          await queryRunner.manager.save(like);
+        }
+      }
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Trả về thông tin userInfo đã khôi phục
+      return;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `Error in restoreUserInfo: ${error.message}`,
+        error.stack,
+      );
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new RpcException(error.message);
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   //CLOUDINARY
