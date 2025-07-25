@@ -12,7 +12,8 @@ Manages user accounts: registration, login, profiles.
 ## Tech Stack
 - NestJS, TypeScript
 - PostgreSQL (Prisma ORM)
-- Cloudinary for media
+- Google OAuth2
+- gRPC
 
 ### Overall Picture
 <img width="500" height="auto" alt="image" src="https://github.com/user-attachments/assets/0329f15d-fb65-42f7-81a6-b7f515ec314a" />
